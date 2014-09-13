@@ -4,6 +4,9 @@ ControlP5 controlP5;
 DropdownList p1;
 Table table;
 StringList strings = new StringList();
+int selectedState;
+float totalWorkers;
+float[] angles = new float[6];
 
 void setup() {
   size(800,600);
@@ -14,12 +17,13 @@ void setup() {
   }
   
   controlP5 = new ControlP5(this);
-  p1 = controlP5.addDropdownList("State Select", width/2 - 50, 100, 100, 120);
+  p1 = controlP5.addDropdownList("State Select", 50, 50, 100, 120);
   customize(p1);
 }
 
 void draw(){
-  background(50);
+  background(200);
+  pieChart(300, angles);
 }
 
 void customize(DropdownList ddl) {
@@ -42,5 +46,26 @@ void customize(DropdownList ddl) {
 void controlEvent(ControlEvent theEvent) {
   if (theEvent.isGroup()) {
     println(theEvent.group().value() + " from " + theEvent.group());
+    if (theEvent.group().name().equals("State Select")) {
+      selectedState = int(theEvent.group().value());
+      ListBoxItem selectedStateItem = p1.getItem((int)theEvent.value());
+      totalWorkers = table.getRow(selectedState).getInt("Total Workers");
+      angles[0] = 360.00 * table.getRow(selectedState).getInt("Drove Alone")/totalWorkers;
+      angles[1] = 360.00 * table.getRow(selectedState).getInt("Car-pooled")/totalWorkers;
+      angles[2] = 360.00 * table.getRow(selectedState).getInt("Used Public Transportation")/totalWorkers;
+      angles[3] = 360.00 * table.getRow(selectedState).getInt("Walked")/totalWorkers;
+      angles[4] = 360.00 * table.getRow(selectedState).getInt("Other")/totalWorkers;
+      angles[5] = 360.00 * table.getRow(selectedState).getInt("Worked at home")/totalWorkers;
+    }
+  }
+}
+
+void pieChart(float diameter, float[] data) {
+  float lastAngle = 0;
+  for (int i = 0; i < data.length; i++) {
+    float gray = map(i, 0, data.length, 0, 255);
+    fill(gray);
+    arc(width/2, height/2, diameter, diameter, lastAngle, lastAngle + radians(angles[i]));
+    lastAngle += radians(angles[i]);
   }
 }
