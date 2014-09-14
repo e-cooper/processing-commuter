@@ -70,17 +70,23 @@ void pieChart(float diameter, float[] data) {
   float lastAngle = 0;
   for (int i = 0; i < data.length; i++) {
     float gray = map(i, 0, data.length, 0, 255);
-    fill(gray);
-    ellipse(pieX, pieY, 150, 150);
-    println(c + " " + color(gray));
+//    println(c + " " + color(gray));
     if (c == color(gray)) {
       fill(255, 0, 0);
     }
+    else {
+      fill(gray);
+    }
     arc(pieX, pieY, diameter, diameter, lastAngle, lastAngle + radians(angles[i]));
     lastAngle += radians(angles[i]);
+    fill(200);
+    ellipse(pieX, pieY, 150, 150);
   }
 }
 
 void mouseMoved() {
-  c = get(mouseX, mouseY);
+  color temp = get(mouseX, mouseY);
+  if (temp != color(255, 0, 0)) {
+    c = temp;
+  }
 }
