@@ -7,6 +7,7 @@ StringList strings = new StringList();
 int selectedState, pieX, pieY;
 float totalWorkers;
 float[] angles = new float[6];
+boolean[] hovered = new boolean[6];
 color c;
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ int tempState=-1;
 int scale;
 ArrayList<Circle> circles = new ArrayList<Circle>();
 int startPositionX = 100;
-int startPositionY = 570;
+int startPositionY = 650;
 int rangeMin;
 int rangeMax;
 int w = 600;
@@ -41,10 +42,11 @@ int leftVal=rangeMin, rightVal=rangeMax;
 boolean stateMouseOver = false;
 Circle selectMode1Circle;
 Circle selectMode2Circle;
+int vis2Y = 580;
 /////////////////////////////////////////////////////////////////////////////////////
 
 void setup() {
-  size(800, 800);
+  size(800, 700);
   noStroke();
   table = loadTable("CommuterData.csv", "header");
   selectedState = 0;
@@ -56,7 +58,7 @@ void setup() {
   }
 
   controlP5 = new ControlP5(this);
-  p1 = controlP5.addDropdownList("State Select", 550, 100, 100, 120);
+  p1 = controlP5.addDropdownList("State Select", 500, 120, 100, 120);
   customize(p1);
 
   totalWorkers = table.getRow(selectedState).getInt("Total Workers");
@@ -65,7 +67,6 @@ void setup() {
   }
 
   ////////////////
-  size(800, 600);
   scale=1;
   rangeMin=0;  
   if (selectedMode==0) {
@@ -75,24 +76,21 @@ void setup() {
   }
   importCSV();
   calcMaxMin();
-  //   setupPoints();
   setupBars(selectedMode);
-  //background(255);
 
   circles.add(new Circle(5, startPositionX, startPositionY));
   circles.add(new Circle(5, startPositionX+w, startPositionY));
 
-  selectMode1Circle = new Circle(5, 750, 400, false, 0);
+  selectMode1Circle = new Circle(5, 750, 480, false, 0);
 
-  selectMode2Circle = new Circle(5, 750, 430, false, 1);
-  selectMode2Circle.select(750, 430);
+  selectMode2Circle = new Circle(5, 750, 510, false, 1);
+  selectMode2Circle.select(750, 510);
   ////////////
 }
 
 void draw() {
-  background(200);
+  background(20, 82, 113);
   pieChart(300, angles);
-  text(data[STATE][0], 500, 150);
   drawVis2();
   drawSlider();
 }
@@ -116,7 +114,6 @@ void customize(DropdownList ddl) {
 
 void controlEvent(ControlEvent theEvent) {
   if (theEvent.isGroup()) {
-    println(theEvent.group().value() + " from " + theEvent.group());
     if (theEvent.group().name().equals("State Select")) {
       selectedState = int(theEvent.group().value());
       totalWorkers = table.getRow(selectedState).getInt("Total Workers");
@@ -127,26 +124,54 @@ void controlEvent(ControlEvent theEvent) {
   }
 }
 
-void pieChart(float diameter, float[] data) {
+void pieChart(float diameter, float[] pieData) {
   float lastAngle = 0;
-  for (int i = 0; i < data.length; i++) {
-    float gray = map(i, 0, data.length, 0, 255);
-    //    println(c + " " + color(gray));
-    if (c == color(gray)) {
-      fill(255, 0, 0);
+  color[] chooseColor = { 
+    color(105, 210, 231), color(167, 219, 216), color(224, 228, 204), color(160, 162, 145), color(243, 134, 48), color(250, 105, 0)
+  };
+  for (int i = 0; i < pieData.length; i++) {
+    color chosenColor = chooseColor[i];
+    if (c == chosenColor) {
+      fill(#FFB80D);
+      hovered[i] = true;
     } else {
-      fill(gray);
+      fill(chosenColor);
+      hovered[i] = false;
     }
     arc(pieX, pieY, diameter, diameter, lastAngle, lastAngle + radians(angles[i]));
+    rect(pieX + 200, pieY - 60 + (i * 30), 10, 10);
     lastAngle += radians(angles[i]);
-    fill(200);
+    fill(250);
+    text(data[0][i + 2] + ": " + nfc(table.getRow(selectedState).getInt(i + 2), 0), pieX + 220, pieY - 50 + (i * 30));
+    fill(20, 82, 113);
     ellipse(pieX, pieY, 150, 150);
+  }
+  checkHovered();
+  fill(250);
+  text(data[0][8] + ": " + nfc(table.getRow(selectedState).getInt(8)), pieX + 220, pieY + 130);
+  text("Mode of Commuting to Work for Americans", pieX + 200, pieY - 130);
+}
+
+void checkHovered() {
+  int count = 0;
+  for (boolean b : hovered) {
+    if (b == true) {
+      fill(250);
+      text(String.format("%.2f", 100 * angles[count]/360) + "%", 285, 205);
+      for (DataElement d : bars) {
+        if ((selectedState + 1 == d.id) && (count + 2 == d.column)) {
+          d.highlight();
+        }
+      }
+    } else {
+      count++;
+    }
   }
 }
 
 void mouseMoved() {
   color temp = get(mouseX, mouseY);
-  if (temp != color(255, 0, 0)) {
+  if (temp != color(#FFB80D)) {
     c = temp;
   }
   stateMouseOver = false;
@@ -189,7 +214,6 @@ void importCSV() {
   for (int i=1; i<rows; i++) {
     for (int j=1; j<8; j++) {
       tempPrec=Float.parseFloat(data[i][j])/Float.parseFloat(data[i][1])*100;
-      //println(tempPrec);
       dataPrec[i][j]=tempPrec;
     }
   }
@@ -217,7 +241,7 @@ void calcMaxMin() {
 
 void drawSlider() {
 
-  stroke(100);
+  stroke(250);
   line(startPositionX, startPositionY, startPositionX + w, startPositionY);
   noStroke();
   for (Circle c : circles) {
@@ -225,22 +249,21 @@ void drawSlider() {
   }
   selectMode1Circle.draw();
   selectMode2Circle.draw();
-  fill(0, 0, 0);
-  text("Numbers", 680, 405);
-  text("Percent", 680, 435);
+  fill(250);
+  text("Numbers", 680, 485);
+  text("Percent", 680, 515);
 }
 
 void drawVis2() {
 
-  fill(100);
-  text("Top 3 States by Category", 250, 350);
+  fill(250);
+  text("Top 3 States by Category", 300, 400);
   fill(0);
   for (int i=2; i<8; i++) {
-    fill(0);
+    fill(250);
     pushMatrix();
-    translate(100+((i-2)*100), 540);
-    rotate(0.1);
-    text(data[0][i], 0, 0);
+    translate(100+((i-2)*100), vis2Y+10);
+    text(data[0][i], 0, 0, 70, 30);
     popMatrix();
   }
   fill(0);
@@ -318,7 +341,6 @@ void setupBars(int mode) {
   float value=0;
   for (int i=2; i<8; i++) { 
     int[] top3=sortColumn(i, leftVal, rightVal);
-    //    String[] top3State = sortColumnState(i, leftVal, rightVal);
     for (int j=0; j<3; j++) {
       if (top3[j]>0) {
         if (mode==1) {
@@ -330,8 +352,7 @@ void setupBars(int mode) {
           yCoord = 1-(value*150); 
           value=Float.parseFloat(data[top3[j]][i]);
         } 
-        bars.add(new DataElement(100+((i-2)*100)+(j*21), yCoord+500, top3[j], value, 1, yCoord, i, j));
-        //        text(top3State[j], 100+((i-2)*100)+(j*21), yCoord+520);
+        bars.add(new DataElement(100+((i-2)*100)+(j*21), yCoord+vis2Y, top3[j], value, 1, yCoord, i, j));
       }
     }
   }
@@ -396,11 +417,11 @@ class DataElement {
     this.radius=radius;
     this.column=column;
     if (place == 0) {
-      c = #990000;
+      c = #69D2E6;
     } else if (place == 1) {
-      c = #0000FF;
+      c = #E0E4CB;
     } else {
-      c = #009900;
+      c = #F38631;
     }
   }
   void highlight() {
@@ -417,7 +438,6 @@ class DataElement {
         tempState=STATE;
         STATE=id;
         points.clear();
-        //         setupPoints();
         for (DataElement d : points) {
           if (d.column==this.column) {
             d.highlight();
@@ -443,6 +463,7 @@ class DataElement {
     }
   }
   void displayValue() {
+    fill(250);
     if (type==0) {
       text(String.format("%.2f", value), x-15, 45);
     } else {
@@ -456,7 +477,7 @@ class DataElement {
       }
     } else {
       if ( mx >= x  &&  mx <= x+10 &&
-        my >= y  &&  my <= y+(500-y)) { 
+        my >= y  &&  my <= y+(vis2Y-y)) { 
         return true;
       }
     }
@@ -474,18 +495,17 @@ class DataElement {
     if (type==0) {
       ellipse(x, y, radius*2, radius*2);
     } else if (type==1) {
-      rect(x, y, 10, 500-y);
+      rect(x, y, 10, vis2Y-y);
       text(stateLogo[id - 2], x - 2, y - 20);
     }
   }
 }
 
 class Circle {
-  www
-    float radius, x, y;
+  float radius, x, y;
   boolean highlighted = false;
   int highlightedColor = #FFB80D;
-  int c = #888888;
+  int c = 250;
   int accentColor = #AAAAAA;
   boolean selected = false;
   boolean movable = true;
@@ -550,9 +570,9 @@ class Circle {
       fill(highlightedColor);
     } else {
       if (!movable && selectedMode == ID) {
-        fill(#000000);
+        fill(highlightedColor);
       } else if (!movable) {
-        fill(#FFFFFF);
+        fill(250);
       } else {
         fill(c);
       }
